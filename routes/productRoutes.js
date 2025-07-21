@@ -2,10 +2,10 @@
 const express = require("express");
 const router = express.Router();
 const Product = require("../models/product");
-const authMiddleware = require("../middleware/auth"); // ✅ Import middleware JWT
+const { authMiddleware } = require("../middleware/auth");
 
 // ✅ Get all products (protected)
-router.get("/", authMiddleware, async (req, res) => {
+router.get("/all", authMiddleware, async (req, res) => {
   try {
     const products = await Product.find().sort({ createdAt: -1 });
     res.json(products);

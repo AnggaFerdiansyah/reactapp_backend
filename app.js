@@ -3,7 +3,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 
-const authMiddleware = require("./middleware/auth");
+const { authMiddleware } = require("./middleware/auth");
 const authRoutes = require("./routes/authRoutes");
 const productRoutes = require("./routes/productRoutes");
 
@@ -16,7 +16,7 @@ app.use(express.json());
 
 // Routes
 app.use("/auth", authRoutes);
-app.use("/products", authMiddleware, productRoutes); // middleware disisipkan di sini
+app.use("/products", authMiddleware, productRoutes);
 
 // Koneksi database
 mongoose
