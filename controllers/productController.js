@@ -1,4 +1,3 @@
-// sementara kita pakai array untuk menyimpan data produk
 let products = [];
 
 const getAllProducts = (req, res) => {
@@ -14,7 +13,7 @@ const createProduct = (req, res) => {
     code,
     stock: parseInt(stock),
     unit,
-    color: color || ''
+    color: color || "",
   };
 
   products.push(newProduct);
@@ -23,5 +22,5 @@ const createProduct = (req, res) => {
 
 module.exports = {
   getAllProducts,
-  createProduct
+  createProduct,
 };

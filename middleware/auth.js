@@ -1,7 +1,5 @@
-// 📁 middleware/auth.js
 const jwt = require("jsonwebtoken");
 
-// Middleware untuk verifikasi token JWT
 const authMiddleware = (req, res, next) => {
   const token = req.headers.authorization?.split(" ")[1];
   if (!token) return res.status(401).json({ error: "Token tidak ada" });
@@ -15,7 +13,6 @@ const authMiddleware = (req, res, next) => {
   }
 };
 
-// Middleware untuk otorisasi berdasarkan role (khusus admin misalnya)
 const authorizeAdmin = (...allowedRoles) => {
   return (req, res, next) => {
     if (!req.user || !allowedRoles.includes(req.user.role)) {

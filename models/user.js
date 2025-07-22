@@ -10,6 +10,8 @@ const userSchema = new mongoose.Schema({
     enum: ["owner", "admin", "user"],
     default: "admin",
   },
+  lastLogin: Date,
+  lastLoginIP: String,
 });
 
 // Password Encription

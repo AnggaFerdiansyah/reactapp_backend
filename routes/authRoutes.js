@@ -1,9 +1,12 @@
 const express = require("express");
 const router = express.Router();
 const jwt = require("jsonwebtoken");
+const UAParser = require("ua-parser-js");
 const User = require("../models/user");
+const Session = require("../models/session");
 const { authMiddleware, authorizeAdmin } = require("../middleware/auth");
 
+// ✅ Register User
 router.post("/register", async (req, res) => {
   const { name, username, password, role = "staff" } = req.body;
 
@@ -22,6 +25,7 @@ router.post("/register", async (req, res) => {
   }
 });
 
+// ✅ Login + Simpan Session
 router.post("/login", async (req, res) => {
   const { username, password } = req.body;
 
@@ -39,6 +43,40 @@ router.post("/login", async (req, res) => {
       { expiresIn: "1d" }
     );
 
+    // ✅ Ambil IP Address
+    let ip =
+      req.headers["x-forwarded-for"] ||
+      req.connection?.remoteAddress ||
+      req.socket?.remoteAddress ||
+      req.ip;
+
+    if (ip?.startsWith("::ffff:")) ip = ip.replace("::ffff:", "");
+    else if (ip === "::1") ip = "127.0.0.1";
+
+    // ✅ Parsing User Agent
+    const rawUserAgent = req.get("User-Agent") || "Unknown";
+    const parser = new UAParser(rawUserAgent);
+    const deviceInfo = parser.getDevice(); // { vendor, model, type }
+
+    let deviceName = "Unknown Device";
+    if (deviceInfo.vendor || deviceInfo.model) {
+      deviceName = `${deviceInfo.vendor || ""} ${
+        deviceInfo.model || ""
+      }`.trim();
+    } else {
+      const os = parser.getOS();
+      deviceName = os.name || "Unknown Device";
+    }
+
+    // ✅ Simpan session login
+    await Session.create({
+      user: user._id,
+      ipAddress: ip,
+      device: deviceName,
+      loginTime: new Date(),
+      token,
+    });
+
     res.json({
       token,
       user: {
@@ -49,12 +87,12 @@ router.post("/login", async (req, res) => {
       },
     });
   } catch (err) {
-    console.error(err);
+    console.error("Error saat login:", err);
     res.status(500).json({ error: "❌ Gagal login" });
   }
 });
 
-// Get User
+// ✅ Get Semua User (admin only)
 router.get(
   "/users/all",
   authMiddleware,
@@ -69,7 +107,8 @@ router.get(
     }
   }
 );
-// Delete User
+
+// ✅ Delete User (admin only)
 router.delete(
   "/users/:id",
   authMiddleware,
@@ -85,7 +124,7 @@ router.delete(
   }
 );
 
-// Change Role
+// ✅ Ubah Role User (admin only)
 router.put(
   "/users/:id/role",
   authMiddleware,
@@ -110,6 +149,35 @@ router.put(
     } catch (err) {
       console.error(err);
       res.status(500).json({ error: "❌ Gagal mengubah role user" });
+    }
+  }
+);
+
+// ✅ Get Semua Session Login (admin only)
+router.get(
+  "/sessions",
+  authMiddleware,
+  authorizeAdmin("admin"),
+  async (req, res) => {
+    try {
+      const sessions = await Session.find()
+        .populate("user", "name username role")
+        .sort({ loginTime: -1 });
+
+      const formatted = sessions.map((s) => ({
+        _id: s._id,
+        name: s.user?.name || "-",
+        username: s.user?.username || "-",
+        role: s.user?.role || "-",
+        ip: s.ipAddress || "-",
+        device: s.device || "-",
+        timestamp: s.loginTime || "-",
+      }));
+
+      res.json(formatted);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: "❌ Gagal mengambil data session" });
     }
   }
 );
